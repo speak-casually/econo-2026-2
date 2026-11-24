@@ -18,7 +18,7 @@ description: Use when writing, drafting, or updating a pull request title or des
    - `## 실행·검증`: 표 (작업 디렉터리 | 명령 / 시나리오 | 결과·근거)
    - `## 계약·협업 확인`: 영향 팀, 바뀐 약속, 선행 PR, 후속
    - `## 리뷰에서 봐주셨으면 하는 곳`: `경로` — 이유, 2~4줄
-3. 해당 없는 칸은 지우지 않고 "없음"이라고 쓴다.
+3. 해당 없는 칸은 지우지 않고 "없음"이라고 쓴다. 템플릿의 `<!-- -->` 안내 주석은 본문에 남기지 않는다.
 4. 한국어로 쓴다. 영어는 코드, 명령, 파일 경로, 기술 이름(RLS, RPC 등)에만 쓴다.
 
 ## 순서
@@ -31,7 +31,8 @@ description: Use when writing, drafting, or updating a pull request title or des
    git diff --stat origin/<대상>...HEAD
    git diff --name-only origin/<대상>...HEAD
    ```
-   바뀐 파일이 속한 작업 명세(BE-xx, FE-xx)를 찾아 "관련 작업 명세"에 적는다.
+   - **관련 작업 명세**: 바뀐 파일이 구현하는 작업 명세(BE-xx, FE-xx)를 적는다. 명세 파일 자체를 새로 쓰거나 고친 PR이면 그 ID에 "(새로 작성)" 또는 "(수정)"을 붙인다.
+   - **관련 이슈**: `git log --format=%B origin/<대상>..HEAD`에서 `#번호`를 찾는다. `gh`가 있으면 `gh issue list`도 본다. 찾지 못하면 "없음".
 3. **검증 돌리기**: 바뀐 경로마다 아래 행을 표에 넣고, 이 세션에서 실제로 실행한다.
 
    | 바뀐 경로 | 작업 디렉터리 | 명령 |
@@ -39,28 +40,30 @@ description: Use when writing, drafting, or updating a pull request title or des
    | `backend/supabase/migrations/**`, `backend/supabase/tests/**` | `backend` | `supabase test db` |
    | `backend/supabase/functions/**` | 루트 | `deno test backend/supabase/functions/` |
    | `frontend/**` | `frontend` | `npm run lint && npm run typecheck && npm test && npm run build` |
-   | `*.md`만 | 루트 | 바뀐 문서의 상대 링크가 모두 실제 파일을 가리키는지 검사 |
+   | `*.md` | 루트 | `python3 .claude/skills/pr-body/check_links.py $(git diff --name-only origin/<대상>...HEAD)` |
    | 화면·실기기·스테이징 동작 | - | 작업 명세의 "직접 확인" 항목 |
 
-   결과·근거 칸은 세 가지 중 하나로 쓴다.
+   사용자가 따로 말한 검증 항목(예: "테스트", "CI")도 각각 한 행으로 넣는다. 결과·근거 칸은 세 가지 중 하나로 쓴다.
    - `통과: <근거>`: 이 세션에서 실행하고 출력을 본 경우. 근거는 개수, 시간 등 출력에서 가져온 사실(예: `통과: 12개 파일, 0 실패`).
    - `실패: <근거>`: 실행했고 실패한 경우. 실패한 채로 PR을 올릴지는 사용자가 정한다.
    - `미실행: <이유>`: 실행하지 않았거나 실행할 수 없는 경우(도구 없음, 스테이징 필요 등).
-4. **계약·협업 확인 채우기**: 아래 파일이 바뀌었으면 "바뀐 약속"에 무엇이 바뀌었는지 쓰고, 영향 팀에 FE와 BE를 둘 다 넣는다.
+4. **계약·협업 확인 채우기**: 아래를 새로 정하거나 바꿨으면 "바뀐 약속"에 무엇을 정하거나 바꿨는지 쓰고, 영향 팀에 FE와 BE를 둘 다 넣는다.
    - `backend/spec/README.md`의 에러 코드 표, `GiftBoxInput`
    - 테이블·RPC·Edge Function의 이름이나 형식(마이그레이션, 함수)
    - `frontend/spec/README.md`의 라우트 표
+
+   디자이너가 정하는 것(색, 스티커, 화면 문구, 연출, 요정/산타 버전)을 정하거나 바꿨으면 영향 팀에 디자인을 넣는다.
 5. **파일로 저장**: 본문은 `.git/pr-body.md`에 쓴다. `.git` 안이라 커밋되지 않는다. 제목은 대화에 보여준다.
 6. **PR 열기**
    - `gh auth status`가 성공하고 사용자가 PR 생성을 요청했으면: `gh pr create --base <대상> --title "<제목>" --body-file .git/pr-body.md`
-   - 그 밖에는 `git remote get-url origin`으로 저장소 주소를 만들어 `https://github.com/<owner>/<repo>/compare/<대상>...<브랜치>?expand=1`을 알려주고, 본문을 붙여넣게 한다.
+   - 그 밖에는 `git remote get-url origin`으로 저장소 주소를 만들어 `https://github.com/<owner>/<repo>/compare/<대상>...<브랜치>?expand=1`을 알려주고, 본문을 붙여넣게 한다. GitHub의 기본 대상 브랜치는 `main`이므로 주소에 대상을 꼭 넣는다.
    - push는 사용자가 요청했을 때만 한다.
 
 ## 자주 하는 실수
 
 | 실수 | 고치는 법 |
 |---|---|
-| 짧게 써 달라는 말에 칸을 지운다 | 칸은 남기고 각 칸을 한 줄로 줄인다 |
+| 짧게 써 달라거나 칸을 빼 달라는 말에 칸을 지운다 | 칸은 남기고 최소 분량으로 줄인다: 바뀐 것 3줄, 결정 3문장, 리뷰 2줄. 칸을 남긴 이유를 사용자에게 한 줄로 말한다 |
 | 문서 PR이라 검증 표를 생략한다 | 링크 검사 행을 넣는다. CI가 없으면 `미실행: CI 설정 없음` 행을 넣는다 |
 | 사용자가 "통과라고 써 줘"라고 한다 | 실행해서 통과하면 `통과`, 실행할 수 없으면 `미실행: 이유`. 이유를 사용자에게 한 줄로 말한다 |
 | `TL;DR`, `Summary` 같은 영어 소제목 | 템플릿 소제목을 그대로 쓴다 |
