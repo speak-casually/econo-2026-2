@@ -11,7 +11,7 @@ description: Use when writing, drafting, or updating a pull request title or des
 
 ## 결과물의 모양
 
-1. **제목**: `<type>: <한국어 요약>`, 50자 이내. type은 `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `ci` 중 하나.
+1. **제목**: `<type>: <한국어 요약>`, 50자 이내. type은 `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `ci` 중 하나. 커밋 type이 섞여 있으면 바뀐 줄이 가장 많은 쪽을 쓴다.
 2. **본문**: 템플릿의 소제목 다섯 개를 그대로, 그 순서대로 쓴다.
    - `## 이번에 한 일`: 관련 작업 명세 ID(`backend/spec`, `frontend/spec`의 BE-xx, FE-xx), 관련 이슈, 바뀐 것 3~6줄
    - `## 결정 3줄`: 결정, 이유, 영향 각 한 문장
@@ -39,11 +39,11 @@ description: Use when writing, drafting, or updating a pull request title or des
    |---|---|---|
    | `backend/supabase/migrations/**`, `backend/supabase/tests/**` | `backend` | `supabase test db` |
    | `backend/supabase/functions/**` | 루트 | `deno test backend/supabase/functions/` |
-   | `frontend/**` | `frontend` | `npm run lint && npm run typecheck && npm test && npm run build` |
+   | `frontend/` 아래 `.md`가 아닌 파일 | `frontend` | `npm run lint && npm run typecheck && npm test && npm run build` |
    | `*.md` | 루트 | `python3 .claude/skills/pr-body/check_links.py $(git diff --name-only origin/<대상>...HEAD)` |
    | 화면·실기기·스테이징 동작 | - | 작업 명세의 "직접 확인" 항목 |
 
-   사용자가 따로 말한 검증 항목(예: "테스트", "CI")도 각각 한 행으로 넣는다. 결과·근거 칸은 세 가지 중 하나로 쓴다.
+   사용자가 따로 말한 검증 항목(예: "테스트", "CI")도 각각 한 행으로 넣는다(작업 디렉터리는 `-`). 결과·근거 칸은 세 가지 중 하나로 쓴다.
    - `통과: <근거>`: 이 세션에서 실행하고 출력을 본 경우. 근거는 개수, 시간 등 출력에서 가져온 사실(예: `통과: 12개 파일, 0 실패`).
    - `실패: <근거>`: 실행했고 실패한 경우. 실패한 채로 PR을 올릴지는 사용자가 정한다.
    - `미실행: <이유>`: 실행하지 않았거나 실행할 수 없는 경우(도구 없음, 스테이징 필요 등).
