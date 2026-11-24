@@ -8,7 +8,7 @@
 
 **Tech Stack:** Supabase CLI(로컬 docker), Postgres 15+, pgTAP, Deno(Edge Functions), React 19 + Vite + TypeScript, Tailwind CSS v4(`@tailwindcss/vite`), React Router, `@supabase/supabase-js` v2, Vitest, GitHub Actions.
 
-**Spec:** [요구사항 명세](../specs/2026-11-25-requirements-design.md) (동작), [기술 스택](../specs/2026-11-22-tech-stack-design.md) (구현 방식). 둘 다 읽고 시작한다.
+**Spec:** [요구사항 명세](../specs/2026-11-25-requirements-design.md) (동작), [기술 스택](../specs/2026-11-22-tech-stack-design.md) (구현 방식). 둘 다 읽고 시작한다. 작업별 명세: B0~B5 = [backend/spec](../../../backend/spec/README.md)의 BE-00~05, F1~F6 = [frontend/spec](../../../frontend/spec/README.md)의 FE-01~06. 작업 명세의 완료 조건이 이 계획의 테스트보다 많으면 작업 명세를 따른다.
 
 **전체 계획 중 위치** (주차별 계획 3개)
 1. **이 문서 (11/25~11/29)**: 기반, 위험 확인, 로그인·프로필, 공개 트리 P0
@@ -35,10 +35,11 @@
 - 관리자 판별: `auth.jwt() -> 'app_metadata' ->> 'role' = 'admin'`. `user_metadata`는 쓰지 않는다.
 - `security definer` 함수는 `set search_path = ''`를 두고 이름을 스키마까지 적는다(`public.profiles`).
 - 사용자에게 보이는 문구는 요구사항 명세에 따옴표로 적힌 것을 그대로 쓴다.
+- 파일 경로는 레포 루트 기준이다. Supabase 프로젝트는 `backend/supabase/`에 있다. **Supabase CLI 명령(`supabase ...`)은 `backend/`에서**, `deno`·`git` 명령은 레포 루트에서, `npm` 명령은 `frontend/`에서 실행한다.
 
 ### pgTAP 테스트 규칙 (B 작업 공통)
 
-파일은 `supabase/tests/database/*.test.sql`. 각 파일은 `begin; select plan(N); ... select * from finish(); rollback;` 구조다. 사용자 흉내는 아래처럼 한다.
+파일은 `backend/supabase/tests/database/*.test.sql`. 각 파일은 `begin; select plan(N); ... select * from finish(); rollback;` 구조다. 사용자 흉내는 아래처럼 한다.
 
 ```sql
 -- 준비 데이터는 기본 역할(postgres)로 넣는다
@@ -140,8 +141,8 @@ git commit -m "docs: record Kakao memo API manual check"
 
 **Files:**
 - Delete: `backend/.gitkeep`
-- Create: `supabase/` (`supabase init`으로 생성), `supabase/migrations/20261125000100_base.sql`, `supabase/tests/database/base.test.sql`, `.github/workflows/ci.yml`
-- Modify: `supabase/config.toml` (auth 설정)
+- Create: `backend/supabase/` (`backend/`에서 `supabase init`으로 생성), `backend/supabase/migrations/20261125000100_base.sql`, `backend/supabase/tests/database/base.test.sql`, `.github/workflows/ci.yml`
+- Modify: `backend/supabase/config.toml` (auth 설정)
 
 **Interfaces:**
 - Produces:
@@ -155,12 +156,12 @@ git commit -m "docs: record Kakao memo API manual check"
 
 - [ ] **Step 1: 프로젝트 초기화**
 
-Run: `git rm backend/.gitkeep && supabase init && supabase start`
+Run: `git rm backend/.gitkeep && cd backend && supabase init && supabase start`
 Expected: `supabase start`가 `API URL: http://127.0.0.1:54321`과 `anon key`를 출력한다.
 
-`supabase/config.toml`에서 설정한다: `[auth] site_url = "http://localhost:5173"`, `additional_redirect_urls = ["http://localhost:5173/auth/callback"]`, `[auth.external.kakao] enabled = true`, `client_id = "env(KAKAO_REST_API_KEY)"`, `secret = "env(KAKAO_CLIENT_SECRET)"`, `[auth.external.google]`도 같은 방식(`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`). 키 값은 `supabase/.env`(gitignore)에 둔다.
+`backend/supabase/config.toml`에서 설정한다: `[auth] site_url = "http://localhost:5173"`, `additional_redirect_urls = ["http://localhost:5173/auth/callback"]`, `[auth.external.kakao] enabled = true`, `client_id = "env(KAKAO_REST_API_KEY)"`, `secret = "env(KAKAO_CLIENT_SECRET)"`, `[auth.external.google]`도 같은 방식(`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`). 키 값은 `backend/supabase/.env`(gitignore)에 둔다.
 
-- [ ] **Step 2: 실패하는 테스트 작성** `supabase/tests/database/base.test.sql`
+- [ ] **Step 2: 실패하는 테스트 작성** `backend/supabase/tests/database/base.test.sql`
 
 ```sql
 -- plan(10)
@@ -183,7 +184,7 @@ select is((select count(*)::int from public.profiles where nickname = '눈사람
 Run: `supabase test db`
 Expected: FAIL (`relation "public.app_config" does not exist`)
 
-- [ ] **Step 4: 마이그레이션 작성** `supabase/migrations/20261125000100_base.sql`
+- [ ] **Step 4: 마이그레이션 작성** `backend/supabase/migrations/20261125000100_base.sql`
 
 - `app_config`는 기술 문서 4.1의 정의 그대로 만들고, 위 테스트의 세 시각을 `insert`한다. select 정책 `using (true)`.
 - `profiles.nickname`에 `check (char_length(nickname) between 1 and 12 and btrim(nickname) <> '')`.
@@ -198,7 +199,7 @@ Expected: `base.test.sql .. ok`, `All tests successful.`
 
 - [ ] **Step 6: CI 작성** `.github/workflows/ci.yml`
 
-`pull_request`에서 실행. `dorny/paths-filter`로 `supabase/**` 변경 시 `db` 작업을 돌린다: `supabase/setup-cli@v1` → `supabase start` → `supabase test db`. 프론트 작업은 F1이 같은 파일에 추가한다.
+`pull_request`에서 실행. `dorny/paths-filter`로 `backend/supabase/**` 변경 시 `db` 작업을 돌린다(`defaults.run.working-directory: backend`): `supabase/setup-cli@v1` → `supabase start` → `supabase test db`. 프론트 작업은 F1이 같은 파일에 추가한다.
 
 - [ ] **Step 7: 커밋**
 
@@ -212,7 +213,7 @@ git commit -m "feat(db): add base schema with app config, profiles and settings"
 그룹·선물 테이블과 **읽기 규칙만** 만든다. 쓰기 RPC(`place_gift` 등)는 2주차 계획에서 만든다. 1주차에 "받는 사람도 12/25 12:25 전에는 속을 못 본다"를 테스트로 증명하는 것이 목적이다.
 
 **Files:**
-- Create: `supabase/migrations/20261125000200_gift_lock.sql`, `supabase/tests/database/gift_lock.test.sql`
+- Create: `backend/supabase/migrations/20261125000200_gift_lock.sql`, `backend/supabase/tests/database/gift_lock.test.sql`
 
 **Interfaces:**
 - Consumes: B1의 `app_config`, `profiles`
@@ -224,7 +225,7 @@ git commit -m "feat(db): add base schema with app config, profiles and settings"
   - `public.is_group_member(p_group_id uuid) returns boolean`(security definer, 정책 재귀 방지용)
   - 클라이언트 쓰기 정책 없음. 네 테이블 모두 클라이언트가 직접 쓸 수 없다
 
-- [ ] **Step 1: 실패하는 테스트 작성** `supabase/tests/database/gift_lock.test.sql`
+- [ ] **Step 1: 실패하는 테스트 작성** `backend/supabase/tests/database/gift_lock.test.sql`
 
 준비 데이터(`reset role` 상태): 사용자 a(보낸 사람), b(받는 사람), c(같은 그룹 멤버), d(그룹 밖). 그룹 1개에 a·b·c가 멤버. a→b 지정 선물 상자 1개(겉 + 속, 편지 `'메리 크리스마스'`). `app_config.open_at`은 기본값(미래).
 
@@ -252,7 +253,7 @@ select is((select count(*)::int from public.gift_box_contents), 0, 'other member
 Run: `supabase test db`
 Expected: FAIL (`relation "public.groups" does not exist`)
 
-- [ ] **Step 3: 마이그레이션 작성** `supabase/migrations/20261125000200_gift_lock.sql`
+- [ ] **Step 3: 마이그레이션 작성** `backend/supabase/migrations/20261125000200_gift_lock.sql`
 
 - 제약: `groups.name` 1~20자·공백만 불가. `invite_code` 기본값 `substr(md5(gen_random_uuid()::text), 1, 8)`. `gift_boxes.kind in ('designated','manito')`, `check (kind = 'manito' or recipient_id is not null)`, 스티커 `jsonb_array_length(stickers) <= 20`. `gift_box_contents`: 편지 `null` 또는 1~1000자, `cardinality(photo_paths) <= 5`, `youtube_id ~ '^[A-Za-z0-9_-]{11}$'`, 셋 중 하나 이상 존재.
 - 읽기 정책: groups·group_members·gift_boxes는 `public.is_group_member(group_id)`(groups는 `id`). contents는 `sender_id = auth.uid() or exists (select 1 from public.gift_boxes b where b.id = box_id and b.recipient_id = auth.uid() and now() >= (select open_at from public.app_config))`.
@@ -266,14 +267,14 @@ Expected: `gift_lock.test.sql .. ok`
 - [ ] **Step 5: 커밋**
 
 ```bash
-git add supabase/migrations/20261125000200_gift_lock.sql supabase/tests/database/gift_lock.test.sql
+git add backend/supabase/migrations/20261125000200_gift_lock.sql backend/supabase/tests/database/gift_lock.test.sql
 git commit -m "feat(db): add group and gift tables with open-time lock RLS"
 ```
 
 ### Task B3: 공개 트리 스키마 (카드, 좋아요, 신고, 금칙어)
 
 **Files:**
-- Create: `supabase/migrations/20261125000300_public_tree.sql`, `supabase/tests/database/public_tree.test.sql`
+- Create: `backend/supabase/migrations/20261125000300_public_tree.sql`, `backend/supabase/tests/database/public_tree.test.sql`
 
 **Interfaces:**
 - Consumes: B1의 `app_config`, `profiles`, `is_admin()`
@@ -285,7 +286,7 @@ git commit -m "feat(db): add group and gift tables with open-time lock RLS"
   - `public.random_tree_cards(p_limit int default 50) returns setof public.tree_cards` (security invoker, 숨김 제외)
   - 금칙어 위반 시 에러 메시지 `'banned_word'`(errcode `P0001`)
 
-- [ ] **Step 1: 실패하는 테스트 작성** `supabase/tests/database/public_tree.test.sql`
+- [ ] **Step 1: 실패하는 테스트 작성** `backend/supabase/tests/database/public_tree.test.sql`
 
 준비: 사용자 a·b·c와 각자 `profiles`. `insert into public.banned_words values ('나쁜말')`.
 
@@ -326,7 +327,7 @@ c는 숨긴 카드의 id를 알고 있다고 가정한다. RLS `with check`의 `
 Run: `supabase test db`
 Expected: FAIL (`relation "public.tree_cards" does not exist`)
 
-- [ ] **Step 3: 마이그레이션 작성** `supabase/migrations/20261125000300_public_tree.sql`
+- [ ] **Step 3: 마이그레이션 작성** `backend/supabase/migrations/20261125000300_public_tree.sql`
 
 - 열 권한: `revoke insert, update on public.tree_cards from anon, authenticated; grant insert (template, drawing_path, stickers, letter), update (template, drawing_path, stickers, letter) on public.tree_cards to authenticated;`
 - `tree_cards` 정책: select `not hidden or user_id = auth.uid() or public.is_admin()`(anon 포함). insert `with check (user_id = auth.uid() and now() < (select tree_deadline_at from public.app_config))`. update는 using `user_id = auth.uid()`, with check에 같은 시각 조건. delete `using (user_id = auth.uid())`.
@@ -346,15 +347,15 @@ Expected: 세 파일 모두 `ok`
 - [ ] **Step 5: 커밋**
 
 ```bash
-git add supabase/migrations/20261125000300_public_tree.sql supabase/tests/database/public_tree.test.sql
+git add backend/supabase/migrations/20261125000300_public_tree.sql backend/supabase/tests/database/public_tree.test.sql
 git commit -m "feat(db): add public tree cards, likes, reports and banned words"
 ```
 
 ### Task B4: 카카오 토큰 저장과 테스트 발송 (Edge Functions)
 
 **Files:**
-- Create: `supabase/migrations/20261125000400_kakao_tokens.sql`, `supabase/functions/_shared/crypto.ts`, `supabase/functions/_shared/crypto_test.ts`, `supabase/functions/_shared/kakao.ts`, `supabase/functions/_shared/kakao_test.ts`, `supabase/functions/save-kakao-token/index.ts`, `supabase/functions/send-kakao-test/index.ts`
-- Modify: `.github/workflows/ci.yml` (`deno test supabase/functions/_shared/` 추가)
+- Create: `backend/supabase/migrations/20261125000400_kakao_tokens.sql`, `backend/supabase/functions/_shared/crypto.ts`, `backend/supabase/functions/_shared/crypto_test.ts`, `backend/supabase/functions/_shared/kakao.ts`, `backend/supabase/functions/_shared/kakao_test.ts`, `backend/supabase/functions/save-kakao-token/index.ts`, `backend/supabase/functions/send-kakao-test/index.ts`
+- Modify: `.github/workflows/ci.yml` (`deno test backend/supabase/functions/_shared/` 추가)
 
 **Interfaces:**
 - Consumes: B1의 `is_admin` 규칙(함수 안에서는 `user.app_metadata.role === 'admin'`으로 확인)
@@ -368,7 +369,7 @@ git commit -m "feat(db): add public tree cards, likes, reports and banned words"
 
 - [ ] **Step 1: 실패하는 테스트 작성**
 
-`supabase/functions/_shared/crypto_test.ts`:
+`backend/supabase/functions/_shared/crypto_test.ts`:
 ```ts
 Deno.test("round trip", async () => {
   const key = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))));
@@ -379,7 +380,7 @@ Deno.test("fresh iv each call", async () => { /* 같은 평문 두 번 암호화
 Deno.test("wrong key fails", async () => { /* 다른 키로 decryptToken → assertRejects */ });
 ```
 
-`supabase/functions/_shared/kakao_test.ts`:
+`backend/supabase/functions/_shared/kakao_test.ts`:
 ```ts
 Deno.test("memo template", () => {
   const t = JSON.parse(buildMemoTemplate("선물이 열렸어요", "https://example.com"));
@@ -395,7 +396,7 @@ Deno.test("memo text cut to 200 chars", () => {
 
 - [ ] **Step 2: 테스트 실패 확인**
 
-Run: `deno test supabase/functions/_shared/`
+Run: `deno test backend/supabase/functions/_shared/`
 Expected: FAIL (모듈 없음)
 
 - [ ] **Step 3: `_shared/crypto.ts`, `_shared/kakao.ts` 구현**
@@ -404,7 +405,7 @@ Expected: FAIL (모듈 없음)
 
 - [ ] **Step 4: 테스트 통과 확인**
 
-Run: `deno test supabase/functions/_shared/`
+Run: `deno test backend/supabase/functions/_shared/`
 Expected: `ok | 5 passed`
 
 - [ ] **Step 5: `kakao_tokens` 마이그레이션과 두 함수 구현**
@@ -415,13 +416,13 @@ Expected: `ok | 5 passed`
 
 - [ ] **Step 6: 로컬 실행 확인**
 
-Run: `supabase functions serve --env-file supabase/.env` 후 `curl -s -X POST http://127.0.0.1:54321/functions/v1/save-kakao-token -H "Authorization: Bearer <anon key>" -d '{}'`
+Run: (`backend/`에서) `supabase functions serve --env-file supabase/.env` 후 `curl -s -X POST http://127.0.0.1:54321/functions/v1/save-kakao-token -H "Authorization: Bearer <anon key>" -d '{}'`
 Expected: `401 {"error":"unauthorized"}` (anon 키는 사용자가 아니므로). 실제 토큰 저장은 F2 이후 통합 확인에서 본다.
 
 - [ ] **Step 7: 커밋**
 
 ```bash
-git add supabase/migrations/20261125000400_kakao_tokens.sql supabase/functions .github/workflows/ci.yml
+git add backend/supabase/migrations/20261125000400_kakao_tokens.sql backend/supabase/functions .github/workflows/ci.yml
 git commit -m "feat(functions): store encrypted Kakao refresh tokens and send test memo"
 ```
 
@@ -448,7 +449,7 @@ Expected: `Finished supabase secrets set.`
 
 - [ ] **Step 4: 배포 워크플로 작성** `.github/workflows/deploy-db.yml`
 
-`push`가 `develop`이면 스테이징, `main`이면 운영 ref를 쓴다. 단계: `supabase link --project-ref $REF` → `supabase db push` → `supabase functions deploy`. Secrets: `SUPABASE_ACCESS_TOKEN`, `STAGING_PROJECT_REF`, `STAGING_DB_PASSWORD`, `PROD_PROJECT_REF`, `PROD_DB_PASSWORD`. 운영 프로젝트는 아직 없으므로 `main` 분기는 ref가 비어 있으면 건너뛴다.
+`push`가 `develop`이면 스테이징, `main`이면 운영 ref를 쓴다. 작업 디렉터리 `backend`. 단계: `supabase link --project-ref $REF` → `supabase db push` → `supabase functions deploy`. Secrets: `SUPABASE_ACCESS_TOKEN`, `STAGING_PROJECT_REF`, `STAGING_DB_PASSWORD`, `PROD_PROJECT_REF`, `PROD_DB_PASSWORD`. 운영 프로젝트는 아직 없으므로 `main` 분기는 ref가 비어 있으면 건너뛴다.
 
 - [ ] **Step 5: 첫 배포 확인**
 
@@ -516,7 +517,7 @@ Expected: FAIL (`Cannot find module './time'`)
 
 - [ ] **Step 5: 통과 확인과 타입 생성**
 
-Run: `npm test && npx supabase gen types typescript --local > src/lib/database.types.ts && npm run typecheck && npm run build`
+Run: `npm test && supabase gen types typescript --local --workdir ../backend > src/lib/database.types.ts && npm run typecheck && npm run build`
 Expected: 테스트 6개 통과, 빌드 성공. B1이 아직 머지되지 않았으면 타입 생성은 건너뛰고, 백엔드 마이그레이션이 머지될 때마다 다시 생성해 커밋한다.
 
 - [ ] **Step 6: CI와 Vercel**
@@ -677,7 +678,7 @@ Run: `npm test` (FAIL) → 구현 → `npm test` (PASS)
 
 - [ ] **Step 4: 로컬 확인**
 
-`supabase/seed.sql`이 없으므로 대시보드나 SQL로 카드 몇 장을 넣고 본다.
+`backend/supabase/seed.sql`이 없으므로 대시보드나 SQL로 카드 몇 장을 넣고 본다.
 Expected: 카드 수와 D-n이 맞게 나오고, 좋아요 5개 이상인 카드가 밝게 보인다. 비로그인 시크릿 창에서도 트리가 보인다.
 
 - [ ] **Step 5: 커밋**

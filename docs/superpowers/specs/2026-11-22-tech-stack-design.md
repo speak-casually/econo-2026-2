@@ -25,13 +25,13 @@
 ### 백엔드: Supabase
 | 영역 | 선택 | 비고 |
 |---|---|---|
-| DB | Postgres (Supabase) | 스키마는 `supabase/migrations/*.sql`로 버전 관리 |
+| DB | Postgres (Supabase) | 스키마는 `backend/supabase/migrations/*.sql`로 버전 관리 |
 | API | 자동 생성 REST(PostgREST) + `supabase-js` | 단순 CRUD는 클라이언트가 바로 호출. 여러 행을 함께 바꾸는 작업은 Postgres 함수(RPC)로 |
 | 권한 | RLS | **보안의 전부.** 아래 「권한 규칙」 참고 |
 | 인증 | Supabase Auth: 카카오, 구글 | 세션은 브라우저 localStorage(JWT)에 저장. 쿠키 도메인 문제가 없다 |
 | 파일 | Supabase Storage | 비공개 버킷 + 서명 URL |
 | 서버 코드 | Edge Functions (Deno, TypeScript) | 브라우저가 직접 할 수 없는 일에만 쓴다: 카카오 토큰 저장(`save-kakao-token`), 카톡 발송(`send-open-notifications`), YouTube 링크 검사·정보 조회(`youtube-meta`) |
-| 스케줄 | Supabase Cron (pg_cron) + pg_net | 두 개만: 12/25 11:00 추첨 안전장치(`run_draw_if_missing()`), 12/25 12:25 개봉 알림 발송. 잠금·개봉은 스케줄이 필요 없다(아래 참고) |
+| 스케줄 | Supabase Cron (pg_cron) + pg_net | 두 개만: 12/25 11:00 추첨 안전장치(`run_draw(null, 'auto')`), 12/25 12:25 개봉 알림 발송. 잠금·개봉은 스케줄이 필요 없다(아래 참고) |
 | 테스트 | pgTAP (`supabase test db`) | RLS 잠금, 추첨 함수 우선 |
 
 ### 프론트엔드
@@ -114,7 +114,7 @@ create table app_config (
 ### 4.3 마니또 추첨
 - 마감 후 관리자가 **백업 후 수동 실행**한다(실행 1명 + 확인 1명). `run_draw()` Postgres 함수는 관리자(대시보드 SQL 편집기, 즉 `postgres` 역할)만 실행할 수 있고(`revoke execute ... from public, anon, authenticated`), 트랜잭션 하나로 처리한다. `now() < deadline_at`이면 예외를 내고 아무것도 하지 않는다.
 - 결과는 `gift_boxes.recipient_id`에 저장하고, 그룹별 시드와 실행 방식(수동/자동)은 `draws` 테이블에 기록한다. 다시 실행해도 이미 배정된 상자는 건드리지 않는다.
-- **자동 안전장치**: Cron이 12/25 11:00 KST(`0 2 25 12 *`, UTC)에 `run_draw_if_missing()`을 호출한다. `draws` 기록이 없는 그룹만 추첨한다. 추첨은 배정되지 않은 상자의 `recipient_id`만 채우므로, 실행 전에 대상 상자 id 목록을 `draws`에 함께 남기면 되돌릴 수 있다. 이것을 백업으로 삼는다.
+- **자동 안전장치**: Cron이 12/25 11:00 KST(`0 2 25 12 *`, UTC)에 `run_draw(null, 'auto')`를 호출한다. `run_draw`는 수동이든 자동이든 `draws` 기록이 없는 그룹만 추첨한다. 추첨은 배정되지 않은 상자의 `recipient_id`만 채우므로, 실행 전에 대상 상자 id 목록을 `draws`에 함께 남기면 되돌릴 수 있다. 이것을 백업으로 삼는다.
 - **일반 규칙** (정책명세서 §5.3, "두 공간 비교와 마니또 추첨" 자료):
   1. 마니또 상자들의 처리 순서를 시드로 섞는다(`setseed(seed)` 후 `order by random()`).
   2. 상자마다 후보를 정한다. 같은 그룹 멤버에서 **본인과, 본인이 지정 선물을 이미 보낸 멤버를 뺀다.**
@@ -181,7 +181,7 @@ feature/*, docs/*  ──PR──>  develop  ──PR(릴리스)──>  main
 |---|---|
 | DB | `supabase start` → `supabase db reset` → `supabase test db` (마이그레이션 적용 + RLS·추첨 테스트) |
 | 프론트 | lint, 타입 체크, `vite build` |
-| 경로 필터 | `supabase/**`, `frontend/**` 변경 시 해당 작업만 |
+| 경로 필터 | `backend/supabase/**`, `frontend/**` 변경 시 해당 작업만 |
 
 **CD**
 - DB·함수: `develop` 머지 시 스테이징에, `main` 머지 시 운영에 `supabase db push` + `supabase functions deploy`
@@ -196,14 +196,24 @@ feature/*, docs/*  ──PR──>  develop  ──PR(릴리스)──>  main
 ### 레포 구조
 ```
 econo-2026-2/
-├── supabase/
-│   ├── migrations/   # 스키마·RLS·함수 SQL
-│   ├── functions/    # Edge Functions (save-kakao-token, send-open-notifications)
-│   └── tests/        # pgTAP
-├── frontend/         # React + Vite
+├── backend/
+│   ├── spec/             # 백엔드 작업별 명세 (BE-00~)
+│   └── supabase/         # backend/에서 `supabase init`으로 생성
+│       ├── config.toml
+│       ├── migrations/   # 스키마·RLS·함수 SQL
+│       ├── functions/    # Edge Functions (save-kakao-token, send-kakao-test, send-open-notifications, youtube-meta)
+│       ├── tests/        # pgTAP
+│       └── scripts/      # 운영 스크립트 (BE-14)
+├── frontend/
+│   ├── spec/             # 프론트 작업별 명세 (FE-01~)
+│   └── (React + Vite)
 ├── docs/
 └── .github/workflows/
 ```
+
+- 문서의 파일 경로는 레포 루트 기준이다(`backend/supabase/...`).
+- Supabase CLI(`supabase start`, `supabase test db`, `supabase db push` 등)는 **`backend/`에서 실행한다.** CI와 배포 워크플로도 작업 디렉터리를 `backend`로 둔다.
+- 프론트 타입 생성은 `frontend/`에서 `supabase gen types typescript --local --workdir ../backend > src/lib/database.types.ts`.
 
 ## 6. 무료 요금제 한도와 대체 방안
 
