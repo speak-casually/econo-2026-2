@@ -5,6 +5,9 @@
 --   admin@local.test / password123  (관리자, 닉네임 "산타")
 --   user@local.test  / password123  (일반 사용자, 닉네임 "루돌프")
 --   new@local.test   / password123  (프로필 없음: 가입 직후 상태)
+--
+-- id 규칙: seed는 사용자 10…, 그룹 21…, 상자 31…. pgTAP 테스트는 00…, 20…, 30…을 쓴다.
+-- 테스트는 seed가 들어간 DB에서 돌기 때문에 같은 id를 쓰면 pk 충돌로 테스트가 깨진다.
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
@@ -34,3 +37,19 @@ insert into public.profiles (id, nickname) values
 insert into public.user_settings (user_id, privacy_agreed_at, age14_agreed_at, kakao_notify, first_home_visit_at) values
   ('10000000-0000-0000-0000-000000000001', now(), now(), true, now()),
   ('10000000-0000-0000-0000-000000000002', now(), now(), false, null);
+
+-- BE-02 그룹·선물 (산타·루돌프가 멤버인 그룹 1개, 산타 → 루돌프 지정 선물 1개)
+-- 루돌프로 로그인하면 겉은 보이고 속은 개봉 시각 전까지 0행이다.
+insert into public.groups (id, name, invite_code, all_manito, created_by) values
+  ('21000000-0000-0000-0000-000000000001', '로컬 테스트 그룹', 'localtst', false, '10000000-0000-0000-0000-000000000001');
+
+insert into public.group_members (group_id, user_id) values
+  ('21000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001'),
+  ('21000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000002');
+
+insert into public.gift_boxes (id, group_id, recipient_id, kind, box_color, ribbon_color, stickers) values
+  ('31000000-0000-0000-0000-000000000001', '21000000-0000-0000-0000-000000000001',
+   '10000000-0000-0000-0000-000000000002', 'designated', 'red', 'gold', '[{"id":"star","x":0.4,"y":0.2}]');
+
+insert into public.gift_box_contents (box_id, sender_id, letter) values
+  ('31000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', '루돌프야 메리 크리스마스!');
