@@ -73,6 +73,66 @@ RPC는 규칙 위반 시 `raise exception '<코드>'`(errcode `P0001`)를 낸다
 
 Postgres 기본 코드: `23505`(중복, 예: 카드 두 장·좋아요 두 번·신고 두 번·답장 두 번), `42501`(권한·RLS 거부, 예: 걸기 마감 후 카드), `23514`(글자 수 등 제약 위반).
 
+## 클라이언트가 직접 읽는 테이블
+
+RPC를 거치지 않고 `supabase.from(...)`이나 `supabase.storage`로 바로 읽는 대상이다. 컬럼 이름과 타입은 각 명세의 「인터페이스」와 `supabase gen types`를 본다. 이 표는 **누구에게 어떤 행이 보이는지**만 모은다. 규칙의 원본은 근거 명세와 [기술 문서 4.2절](../../docs/superpowers/specs/2026-11-22-tech-stack-design.md)이다.
+
+**RLS로 막힌 읽기는 에러가 아니라 0행이다.** 행이 없을 수 있는 조회는 `.single()` 대신 `.maybeSingle()`을 쓴다. 예를 들어 개봉 전 받는 사람이 선물 속을 조회하면 에러 없이 빈 결과가 온다.
+
+| 대상 | 누가 읽나 | 시각 조건 | 클라이언트 직접 쓰기 | 근거 |
+|---|---|---|---|---|
+| `app_config` | 누구나(비로그인 포함) | - | 없음 | [BE-01](BE-01-foundation.md) |
+| `profiles` | 누구나(비로그인 포함) | - | 본인 행 수정. 생성은 `complete_profile` | [BE-01](BE-01-foundation.md) |
+| `user_settings` | 본인만 | - | `kakao_notify`만 수정. `first_home_visit_at`은 `mark_home_visit` | [BE-01](BE-01-foundation.md) |
+| `tree_cards` | 숨김 아닌 카드: 누구나. 숨긴 카드: 작성자·관리자 | 걸기·수정은 `tree_deadline_at` 전, 삭제는 언제든 | 본인 카드 추가·수정(`template, drawing_path, stickers, letter`)·삭제 | [BE-03](BE-03-public-tree.md) |
+| `card_likes` | 카드 작성자, 그리고 누른 본인 | 마감 후에도 누르고 취소 가능 | 본인 좋아요 추가·삭제. 개수는 `tree_cards.like_count` | [BE-03](BE-03-public-tree.md) |
+| `reports` | 관리자만(일반 사용자는 0행) | - | 로그인 사용자 추가 | [BE-03](BE-03-public-tree.md) |
+| `groups` | 같은 그룹 멤버. 비멤버는 `get_invite` | - | 없음(`create_group`) | [BE-02](BE-02-gift-lock-rls.md), [BE-06](BE-06-groups-invite.md) |
+| `group_members` | 같은 그룹 멤버 | - | 없음(`create_group`, `join_group`) | [BE-02](BE-02-gift-lock-rls.md), [BE-06](BE-06-groups-invite.md) |
+| `gift_boxes` (겉) | 같은 그룹 멤버. **보낸 사람 열 없음** | - | 없음(`place_gift` 등) | [BE-02](BE-02-gift-lock-rls.md) |
+| `gift_box_contents` (속) | 보낸 사람: 항상. 받는 사람: 개봉 후. 그 밖: 끝까지 0행 | 받는 사람은 `now() >= open_at` | 없음(`place_gift` 등) | [BE-02](BE-02-gift-lock-rls.md), [BE-07](BE-07-gift-write.md) |
+| `draws` | 같은 그룹 멤버 | 추첨 전에는 행 없음 | 없음 | [BE-10](BE-10-manito-draw.md) |
+| `gift_replies` (P2) | 받은 사람, 보낸 사람 | 쓰기는 개봉 후 | 받은 사람이 상자당 1번 추가 | [BE-11](BE-11-open-reply.md) |
+| Storage `avatars` (공개) | 누구나 | - | 본인 폴더(`{user_id}/`)에 올리기·지우기 | [BE-01](BE-01-foundation.md) |
+| Storage `card-images` (공개, P1) | 누구나 | 올리기는 걸기 마감 전 | 본인 폴더에 올리기. 지우기는 언제든 | [BE-15](BE-15-card-images.md) |
+| Storage `gift-photos` (비공개) | 올린 본인, 개봉 후 받는 사람 | 올리기·지우기는 마감 전 | 본인 폴더에 올리기·지우기 | [BE-07](BE-07-gift-write.md) |
+
+클라이언트가 접근하지 않는 테이블: `banned_words`, `kakao_tokens`, `notification_logs`.
+
+**화면별 대표 조회**
+
+```ts
+// 시각 설정 (마감·개봉 안내)
+supabase.from('app_config').select('deadline_at, open_at, tree_deadline_at').single()
+
+// 공개 트리: 무작위, 인기순. 작성자 정보는 profiles를 붙인다
+supabase.rpc('random_tree_cards', { p_limit: 50 }).select('*, profiles(nickname, avatar_path)')
+supabase.from('tree_cards').select('*, profiles(nickname, avatar_path)').order('like_count', { ascending: false })
+// 내 카드 (없으면 null)
+supabase.from('tree_cards').select('*').eq('user_id', myId).maybeSingle()
+// 내가 이 카드에 좋아요를 눌렀나 (없으면 null)
+supabase.from('card_likes').select('card_id').eq('card_id', cardId).eq('user_id', myId).maybeSingle()
+
+// 내 그룹 목록: RLS가 내가 멤버인 그룹만 돌려준다
+supabase.from('groups').select('id, name, all_manito')
+// 그룹 멤버
+supabase.from('group_members').select('user_id, joined_at, profiles(nickname, avatar_path)').eq('group_id', groupId)
+// 집 내부 상자 그림 (겉만)
+supabase.from('gift_boxes').select('id, recipient_id, kind, box_color, ribbon_color, stickers, opened_at').eq('group_id', groupId)
+// 받은 상자 목록 (겉만). 속은 open_gift RPC로 연다
+supabase.from('gift_boxes').select('*').eq('recipient_id', myId)
+// 내가 보낸 선물 (속 + 겉)
+supabase.from('gift_box_contents').select('*, gift_boxes(*)').eq('sender_id', myId)
+// 추첨이 끝났나, 미전달 상자는 무엇인가 (추첨 전이면 null)
+supabase.from('draws').select('executed_at, undelivered_box_ids').eq('group_id', groupId).maybeSingle()
+
+// 사진 URL
+supabase.storage.from('avatars').getPublicUrl(path)
+supabase.storage.from('gift-photos').createSignedUrl(path, 3600)
+```
+
+그룹 홈과 집 내부에는 받은 개수를 숫자로 보여주지 않는다([기술 문서 4.2절](../../docs/superpowers/specs/2026-11-22-tech-stack-design.md)). `gift_boxes`를 직접 세면 숫자를 만들 수 있지만 화면에 쓰지 않는다.
+
 ## 선물 입력 형식 `GiftBoxInput` (BE-07, BE-08 공통)
 
 ```json
