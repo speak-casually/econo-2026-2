@@ -26,6 +26,7 @@ public.user_settings(user_id uuid pk → auth.users, privacy_agreed_at timestamp
                      kakao_notify boolean, first_home_visit_at timestamptz null)
 public.complete_profile(p_nickname text, p_avatar_path text, p_kakao_notify boolean) returns void
   -- 두 행을 한 트랜잭션으로 만든다. 동의 시각은 now(). 이미 있으면 'profile_exists'
+  -- p_avatar_path가 '<본인 id>/'로 시작하지 않으면 'invalid_photo_path'. profiles 직접 수정도 같은 규칙
 public.mark_home_visit() returns void
   -- first_home_visit_at이 비어 있을 때만 now()로 채운다
 storage bucket 'avatars' (public)
