@@ -653,7 +653,7 @@ git commit -m "feat(fe): add profile setup with consents and notification toggle
 - Consumes: B3의 `random_tree_cards`, `tree_cards`, B1의 `mark_home_visit`, F1의 `dDayKst`
 - Produces (`api.ts`, F5·F6이 이어서 함수를 추가한다):
   - `type TreeCard = { id: string; userId: string; template: string; letter: string; likeCount: number; hidden: boolean; createdAt: string; author: { nickname: string; avatarPath: string | null } }`
-  - `fetchRandomCards(limit: number): Promise<TreeCard[]>`: `rpc('random_tree_cards', { p_limit }).select('*, profiles(nickname, avatar_path)')`
+  - `fetchRandomCards(limit: number): Promise<TreeCard[]>`: `rpc('random_tree_cards', { p_limit }).select('*, profiles!tree_cards_user_id_fkey(nickname, avatar_path)')`
   - `countVisibleCards(): Promise<number>`: `hidden = false` 필터 + `count: 'exact', head: true`
   - `fetchMyCard(userId: string): Promise<TreeCard | null>`
   - `sparkleLevel(likes: number): 0 | 1 | 2 | 3`

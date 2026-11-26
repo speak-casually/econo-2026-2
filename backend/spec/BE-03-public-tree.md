@@ -42,7 +42,7 @@ public.banned_words(word text pk)   -- 클라이언트 접근 없음
 public.random_tree_cards(p_limit int default 50) returns setof public.tree_cards  -- anon 허용
 ```
 
-카드 작성자 정보는 `tree_cards.user_id → profiles.id` 외래 키로 함께 조회한다(`select('*, profiles(nickname, avatar_path)')`). 인덱스: `like_count desc`, `created_at desc`. 마이그레이션: `backend/supabase/migrations/20261125000300_public_tree.sql`.
+카드 작성자 정보는 `tree_cards.user_id → profiles.id` 외래 키로 함께 조회한다(`select('*, profiles!tree_cards_user_id_fkey(nickname, avatar_path)')`). `card_likes`가 `tree_cards`와 `profiles`를 함께 가리켜서 두 테이블 사이 경로가 둘이 되므로, `!tree_cards_user_id_fkey`로 작성자 경로를 지정해야 한다(없으면 `PGRST201`). 인덱스: `like_count desc`, `created_at desc`. 마이그레이션: `backend/supabase/migrations/20261125000300_public_tree.sql`.
 
 ## 완료 조건
 

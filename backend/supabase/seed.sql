@@ -6,7 +6,7 @@
 --   user@local.test  / password123  (일반 사용자, 닉네임 "루돌프")
 --   new@local.test   / password123  (프로필 없음: 가입 직후 상태)
 --
--- id 규칙: seed는 사용자 10…, 그룹 21…, 상자 31…. pgTAP 테스트는 00…, 20…, 30…을 쓴다.
+-- id 규칙: seed는 사용자 10…, 그룹 21…, 상자 31…, 카드 41…. pgTAP 테스트는 00…, 20…, 30…을 쓴다.
 -- 테스트는 seed가 들어간 DB에서 돌기 때문에 같은 id를 쓰면 pk 충돌로 테스트가 깨진다.
 
 insert into auth.users (
@@ -53,3 +53,16 @@ insert into public.gift_boxes (id, group_id, recipient_id, kind, box_color, ribb
 
 insert into public.gift_box_contents (box_id, sender_id, letter) values
   ('31000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', '루돌프야 메리 크리스마스!');
+
+-- BE-03 공개 트리 (산타·루돌프 카드 각 1장, 루돌프가 산타 카드에 좋아요, 금칙어 예시)
+-- id 규칙: 카드 41…
+insert into public.banned_words (word) values ('나쁜말'), ('바보');
+
+insert into public.tree_cards (id, user_id, template, letter, stickers) values
+  ('41000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'snowman',
+   '모두 메리 크리스마스! 🎅', '[{"id":"star","x":0.5,"y":0.1}]'),
+  ('41000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000002', 'tree',
+   '썰매 끌 준비 완료 🦌', '[]');
+
+insert into public.card_likes (card_id, user_id) values
+  ('41000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000002');
