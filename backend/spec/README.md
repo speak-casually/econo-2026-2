@@ -106,8 +106,8 @@ RPC를 거치지 않고 `supabase.from(...)`이나 `supabase.storage`로 바로 
 supabase.from('app_config').select('deadline_at, open_at, tree_deadline_at').single()
 
 // 공개 트리: 무작위, 인기순. 작성자 정보는 profiles를 붙인다
-supabase.rpc('random_tree_cards', { p_limit: 50 }).select('*, profiles(nickname, avatar_path)')
-supabase.from('tree_cards').select('*, profiles(nickname, avatar_path)').order('like_count', { ascending: false })
+supabase.rpc('random_tree_cards', { p_limit: 50 }).select('*, profiles!tree_cards_user_id_fkey(nickname, avatar_path)')
+supabase.from('tree_cards').select('*, profiles!tree_cards_user_id_fkey(nickname, avatar_path)').order('like_count', { ascending: false })
 // 내 카드 (없으면 null)
 supabase.from('tree_cards').select('*').eq('user_id', myId).maybeSingle()
 // 내가 이 카드에 좋아요를 눌렀나 (없으면 null)

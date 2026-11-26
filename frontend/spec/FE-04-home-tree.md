@@ -21,7 +21,7 @@
 
 ## 사용하는 백엔드
 
-- `rpc('random_tree_cards', { p_limit: 50 }).select('*, profiles(nickname, avatar_path)')`
+- `rpc('random_tree_cards', { p_limit: 50 }).select('*, profiles!tree_cards_user_id_fkey(nickname, avatar_path)')`
 - `tree_cards` 개수(`hidden = false`, `count: 'exact', head: true`), 내 카드(`user_id = 나`)
 - `rpc('mark_home_visit')`
 
