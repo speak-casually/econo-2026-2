@@ -379,7 +379,8 @@
     // `discord`, `facebook`, `github`, `gitlab`, `google`, `keycloak`, `linkedin_oidc`, `notion`, `twitch`,
     // `twitter`, `x`, `slack_oidc`, `spotify`, `workos`, `zoom`.
     "external": {
-      // 카카오: BE-00 확인 결과 비즈 앱이 아니면 이메일 권한이 없어서 email_optional을 켠다.
+      // 카카오: GoTrue는 account_email을 항상 요청한다. 앱을 비즈 앱으로 전환해 이메일을 선택 동의로 열었고,
+      // 이메일을 거절한 사용자도 가입되도록 email_optional을 켠다 (docs/ops/kakao-check.md).
       "kakao": {
         "enabled": true,
         "client_id": "env(KAKAO_REST_API_KEY)",
