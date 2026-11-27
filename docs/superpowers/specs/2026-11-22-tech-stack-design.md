@@ -88,8 +88,8 @@ create table app_config (
 
 | 대상 | 읽기 | 쓰기 |
 |---|---|---|
-| `profiles` (닉네임, 프로필 사진만) | 모두 | 본인만 추가·수정. 닉네임 1~12자 |
-| `user_settings` (필수 동의 시각 2개, `kakao_notify`, `first_home_visit_at`) | 본인만 | 본인만. 공개 열과 섞지 않으려고 `profiles`와 분리한다(RLS가 행 단위라서) |
+| `profiles` (닉네임, 프로필 사진만) | 모두 | 생성은 `complete_profile` RPC로만(`user_settings`와 한 트랜잭션). 수정은 본인만. 닉네임 1~12자 |
+| `user_settings` (필수 동의 시각 2개, `kakao_notify`, `first_home_visit_at`) | 본인만 | 생성은 `complete_profile`. 본인이 직접 고칠 수 있는 열은 `kakao_notify`뿐이고, `first_home_visit_at`은 `mark_home_visit`. 공개 열과 섞지 않으려고 `profiles`와 분리한다(RLS가 행 단위라서) |
 | `tree_cards` | 숨김이 아닌 카드는 비로그인 포함 모두. 숨긴 카드는 작성자 본인과 관리자만 | 추가·수정: 본인, `now() < tree_deadline_at`. 삭제: 본인, 언제든. 1인 1장(`unique(user_id)`), 편지 1~300자, 스티커 20개, 금칙어 트리거 통과. `like_count`·`hidden`은 열 권한(`grant insert/update (열 목록)`)으로 클라이언트가 못 바꾼다 |
 | `card_likes` | **카드 작성자와 좋아요 누른 본인만** (누른 사람 목록은 작성자만 본다) | 본인 것만 추가·삭제, `unique(card_id, user_id)`. 개수는 `tree_cards.like_count`(트리거로 갱신)로 공개 |
 | `reports` | 관리자만 | 로그인 사용자가 추가. 대상은 카드 또는 프로필 |
