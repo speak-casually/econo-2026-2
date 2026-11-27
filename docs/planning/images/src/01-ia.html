@@ -1,0 +1,67 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<style>
+.root { width: 300px; margin: 14px auto 0; background: #14532d; color: #fff; border-radius: 10px; padding: 12px; text-align: center; font-weight: 800; }
+.root span { display: block; font-size: 10.5px; font-weight: 400; color: #d1fae5; }
+.cols { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-top: 26px; position: relative; }
+.cols::before { content: ''; position: absolute; top: -14px; left: 10%; right: 10%; border-top: 1.5px solid #9ca3af; }
+.col { position: relative; }
+.col::before { content: ''; position: absolute; top: -14px; left: 50%; height: 14px; border-left: 1.5px solid #9ca3af; }
+.col .head { padding: 10px; } .col .head b { font-size: 15px; }
+.col .item { margin: 12px 0 0 14px; position: relative; }
+.col .item::before { content: ''; position: absolute; left: -12px; top: 50%; width: 12px; border-top: 1.5px solid #9ca3af; }
+.col .stem { position: absolute; left: 2px; top: 62px; bottom: 30px; border-left: 1.5px solid #9ca3af; }
+.item b { font-size: 12.5px; } .item span { font-size: 10px; }
+.rules { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 24px; }
+</style><script>document.documentElement.className = 'v-' + (new URLSearchParams(location.search).get('v') || 'santa');</script>
+</head>
+<body style="width:1240px">
+<h1>Christmas Gift For You · 정보구조(IA) · <span class="only-santa">산타 버전</span><span class="only-fairy">요정 버전</span></h1>
+<div class="sub">기준: design.md · 정책명세서.md · 기능명세서.md (2026-11-19) · 점선 = P2 · <span class="orange">주황 = 디자인 검토 중</span></div>
+<div class="root">Christmas Gift For You<span>모든 화면: 🔔 배경 캐롤(CC0·PD) 켜기/끄기</span></div>
+<div class="cols">
+  <div class="col"><div class="stem"></div>
+    <div class="box b-blue f-blue head"><b>진입·계정</b><span>누구나 · 쓰기는 로그인</span></div>
+    <div class="item box b-blue"><b>① 로그인</b><span>카카오·구글 · 인앱 → 외부 브라우저</span></div>
+    <div class="item box b-blue"><b>①-a 프로필 설정</b><span>닉네임 12자 · 사진 or 기본 · 동의 · 카톡 알림</span></div>
+    <div class="item box b-blue"><b>⑩ 마이페이지</b><span>프로필 · 내 카드 · 내 그룹 · 알림</span></div>
+  </div>
+  <div class="col"><div class="stem"></div>
+    <div class="box b-green f-green head"><b>공개 트리</b><span>즉시 공개 · 12/25 23:59 걸기 마감</span></div>
+    <div class="item box b-green"><b>⓪ 홈 = 공개 트리</b><span>카드 50장 무작위 · 좋아요 5+ 반짝임</span></div>
+    <div class="item box b-green"><b>② 카드 꾸미기</b><span>기본 카드 or 그리기 + 스티커 + 편지 · 1인 1장</span></div>
+    <div class="item box b-green"><b>③ 카드 보기</b><span>‹ › 넘기기 · ♥ 1인 1카드 1회 · 신고</span></div>
+    <div class="item box b-green"><b>③-1 작성자 프로필</b><span>큰 사진 · 닉네임 · 프로필 신고</span></div>
+    <div class="item box b-green"><b>④ 카드 목록</b><span>무작위 / 좋아요순 / 최신순</span></div>
+  </div>
+  <div class="col"><div class="stem"></div>
+    <div class="box b-red f-red head"><b>비공개 그룹</b><span>12/21 ~ 12/24 23:59 · 내용 잠김</span></div>
+    <div class="item box b-red"><b>⑤ 그룹 만들기</b><span>이름 20자 · 개수 제한 없음</span></div>
+    <div class="item box b-red"><b>⑥ 초대 랜딩</b><span>/g/{code} · 정원 30</span></div>
+    <div class="item box b-orange only-santa"><b>⑦ 그룹 홈 = 하늘 지도</b><span>집 = 멤버 · 목록 보기 · 마니또 떨어뜨리기</span></div>
+    <div class="item box b-orange only-santa"><b>⑦-E 집 내부</b><span>트리 아래 상자(그림만) · [선물 상자 만들기]</span></div>
+    <div class="item box b-orange only-fairy"><b>⑦ 그룹 홈 = 요정</b><span>트리 + 날아다니는 요정 = 멤버 · 탭하면 선물 창</span></div>
+    <div class="item box b-orange only-fairy"><b>⑦-1 멤버 보기</b><span>요정 대신 목록으로 같은 창 열기</span></div>
+    <div class="item box b-red"><b>⑧ 선물상자 꾸미기</b><span>지정 / 마니또 · 편지·사진 5·음반 1곡</span></div>
+  </div>
+  <div class="col"><div class="stem"></div>
+    <div class="box b-purple f-purple head"><b>개봉</b><span>12/25 12:25 · 카톡 알림</span></div>
+    <div class="item box b-purple"><b>⑨ 개봉</b><span class="only-santa">내 집 트리 아래 상자 열기</span><span class="only-fairy">받은 상자 하나씩 열기</span></div>
+    <div class="item box b-purple"><b>마니또 공개</b><span>"🎁 마니또는 ○○님이었어요"</span></div>
+    <div class="item box b-purple"><b>음반 재생</b><span>YouTube 임베드 · 캐롤 일시정지</span></div>
+    <div class="item box b-purple dash"><b>고마워요 답장</b><span>상자마다 한 줄 1회</span></div>
+  </div>
+  <div class="col"><div class="stem"></div>
+    <div class="box b-gray f-gray head"><b>시스템·운영</b><span>관리자</span></div>
+    <div class="item box b-gray"><b>마니또 추첨</b><span>마감 → 백업 → 수동 실행</span></div>
+    <div class="item box b-gray"><b>개봉 알림</b><span>12/25 12:25 카톡 1통</span></div>
+    <div class="item box b-gray"><b>신고 처리</b><span>자동 숨김 없음 · 하루 2회 확인</span></div>
+    <div class="item box b-gray"><b>현황</b><span>성공 기준 진행률</span></div>
+    <div class="item box b-gray"><b>파기</b><span>2027-01-31 일괄</span></div>
+  </div>
+</div>
+<div class="rules">
+  <div class="panel"><h4>공개 트리 규칙</h4>받는 사람 없음 · 걸면 바로 모두가 읽음<br>사진·음반 없음 · 댓글 없음<br>좋아요 누른 사람 목록 = 작성자만</div>
+  <div class="panel"><h4>비공개 그룹 규칙</h4>지정: 받는 사람당 1개 · 마니또: 1인 1개<br>마니또 후보 = 내가 지정 선물 안 보낸 멤버<br>받은 수 적은 멤버 우선 · 숫자 표시 없음</div>
+  <div class="panel"><h4>성공 기준 (분모 = 전체 가입자)</h4>공개: 가입자 80% 이상 카드 걸기<br>비공개: 가입자 80% 이상 선물 1번 이상 보내기<br>+ 모든 그룹에서 선물 안 만든 멤버 0명</div>
+</div>
+</body></html>
