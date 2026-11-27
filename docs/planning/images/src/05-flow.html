@@ -1,0 +1,22 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<style>
+.flow { display: flex; align-items: flex-start; justify-content: center; margin-top: 18px; }
+.arrow { width: 112px; text-align: center; font-size: 10.5px; font-weight: 700; padding-top: 210px; color: #374151; }
+.arrow::after { content: '━━━━▶'; display: block; font-size: 14px; letter-spacing: -2px; }
+.arrow.adash::after { content: '- - - ▶'; letter-spacing: 0; }
+.rowlbl { text-align: center; font-size: 13px; font-weight: 800; margin-top: 22px; }
+</style></head>
+<body style="width:1780px">
+<h1>핵심 시나리오 화면 흐름도 · <span class="only-santa">산타 버전</span><span class="only-fairy">요정 버전</span></h1>
+<div class="sub">A. 공개 트리에 카드를 건다 · B. 초대받아 그룹에 들어가 선물을 놓고 12/25에 함께 연다 · 기준일 2026-11-19</div>
+<div class="rowlbl green">A. 공개 트리</div>
+<div class="flow" id="r1"></div>
+<div class="rowlbl red">B. 비공개 그룹</div>
+<div class="flow" id="r2"></div>
+<script src="screens.js"></script>
+<script>
+const A = (t, dash) => `<div class="arrow${dash ? ' adash' : ''}">${t}</div>`;
+document.getElementById('r1').innerHTML = phone('s0',{mark:false}) + A('「카드 걸기」<br>인앱이면 외부 브라우저') + phone('s1',{mark:false}) + A('첫 가입', true) + phone('s1a',{mark:false}) + A('「시작하기」') + phone('s2',{mark:false}) + A('「트리에 걸기」<br>→ ⓪, ‹ ›로 둘러보기') + phone('s3',{mark:false});
+document.getElementById('r2').innerHTML = phone('s6',{mark:false}) + A('「참여하기」<br>(로그인)') + (V === 'fairy' ? phone('s7f') + A('요정 탭 →<br>「만들기」') : phone('s7') + A('집 탭<br>🛷 0.8초') + phone('s7e') + A('「선물 상자 만들기」')) + phone('s8',{mark:false}) + A('12/25 12:25<br>💬 카톡 알림', true) + phone('s9',{mark:false});
+</script>
+</body></html>
